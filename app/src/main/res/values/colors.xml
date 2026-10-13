@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#6200EE</color>
+    <color name="purple_700">#3700B3</color>
+    <color name="teal_200">#03DAC5</color>
+    <color name="teal_700">#018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Medical Theme Palette -->
+    <color name="primary_teal">#00796B</color>
+    <color name="primary_dark_teal">#004D40</color>
+    <color name="accent_teal">#26A69A</color>
+    <color name="bg_light_gray">#F5F7FA</color>
+    <color name="text_dark">#2C3E50</color>
+    <color name="text_muted">#7F8C8D</color>
+
+    <!-- Status Colors -->
+    <color name="status_pending">#E67E22</color>
+    <color name="status_confirmed">#27AE60</color>
+    <color name="status_cancelled">#C0392B</color>
 </resources>
