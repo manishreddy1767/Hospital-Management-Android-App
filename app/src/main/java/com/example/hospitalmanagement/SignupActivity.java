@@ -14,14 +14,16 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+import com.example.hospitalmanagement.models.Doctor;
 import com.example.hospitalmanagement.models.User;
 import com.example.hospitalmanagement.utils.FirebaseUtils;
 
 public class SignupActivity extends AppCompatActivity {
 
-    private EditText etFullName, etEmail, etPassword;
+    private EditText etName, etEmail, etPassword;
     private RadioGroup rgRole;
-    private RadioButton rbPatient;
+    private RadioButton rbPatient, rbDoctor;
     private Button btnSignup;
     private TextView tvGoToLogin;
 
@@ -34,11 +36,13 @@ public class SignupActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
 
-        etFullName = findViewById(R.id.etFullName);
-        etEmail = findViewById(R.id.etEmail);
-        etPassword = findViewById(R.id.etPassword);
+        // Updated XML View IDs matching Material Layout
+        etName = findViewById(R.id.etSignupName);
+        etEmail = findViewById(R.id.etSignupEmail);
+        etPassword = findViewById(R.id.etSignupPassword);
         rgRole = findViewById(R.id.rgRole);
         rbPatient = findViewById(R.id.rbPatient);
+        rbDoctor = findViewById(R.id.rbDoctor);
         btnSignup = findViewById(R.id.btnSignup);
         tvGoToLogin = findViewById(R.id.tvGoToLogin);
 
@@ -47,40 +51,54 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     private void registerUser() {
-        String fullName = etFullName.getText().toString().trim();
+        String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
-        String role = rbPatient.isChecked() ? "PATIENT" : "DOCTOR";
 
-        if (TextUtils.isEmpty(fullName) || TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+        if (TextUtils.isEmpty(name)) {
+            etName.setError("Full Name is required");
             return;
         }
 
-        if (password.length() < 6) {
-            Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
+        if (TextUtils.isEmpty(email)) {
+            etEmail.setError("Email is required");
             return;
         }
+
+        if (TextUtils.isEmpty(password) || password.length() < 6) {
+            etPassword.setError("Password must be at least 6 characters");
+            return;
+        }
+
+        String role = rbDoctor.isChecked() ? "DOCTOR" : "PATIENT";
 
         mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        FirebaseUser firebaseUser = mAuth.getCurrentUser();
-                        if (firebaseUser != null) {
-                            String userId = firebaseUser.getUid();
-                            User user = new User(userId, fullName, email, role);
+                .addOnSuccessListener(authResult -> {
+                    FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                    if (firebaseUser != null) {
+                        String userId = firebaseUser.getUid();
+                        User newUser = new User(userId, name, email, role);
 
-                            FirebaseUtils.getUsersRef().child(userId).setValue(user)
-                                    .addOnSuccessListener(aVoid -> {
-                                        Toast.makeText(SignupActivity.this, "Registration Successful!", Toast.LENGTH_SHORT).show();
-                                        startActivity(new Intent(SignupActivity.this, MainActivity.class));
-                                        finishAffinity();
-                                    })
-                                    .addOnFailureListener(e -> Toast.makeText(SignupActivity.this, "Database Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-                        }
-                    } else {
-                        Toast.makeText(SignupActivity.this, "Authentication Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        // Store in 'users' node
+                        FirebaseUtils.getUsersRef().child(userId).setValue(newUser)
+                                .addOnSuccessListener(aVoid -> {
+                                    // If Doctor, register entry in 'doctors' node as well
+                                    if ("DOCTOR".equals(role)) {
+                                        Doctor newDoctor = new Doctor(userId, name, "General Physician", "");
+                                        FirebaseUtils.getDoctorsRef().child(userId).setValue(newDoctor);
+                                    }
+
+                                    Toast.makeText(SignupActivity.this, "Account Created Successfully!", Toast.LENGTH_SHORT).show();
+                                    startActivity(new Intent(SignupActivity.this, MainActivity.class));
+                                    finish();
+                                })
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(SignupActivity.this, "Failed to save user data: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                );
                     }
-                });
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(SignupActivity.this, "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                );
     }
 }

@@ -28,7 +28,7 @@ public class LoginActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
 
-        // If user is already logged in, redirect straight to MainActivity
+        // Check active session
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser != null) {
             startActivity(new Intent(LoginActivity.this, MainActivity.class));
@@ -36,8 +36,9 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        etEmail = findViewById(R.id.etEmail);
-        etPassword = findViewById(R.id.etPassword);
+        // Updated XML View IDs matching Material Layout
+        etEmail = findViewById(R.id.etLoginEmail);
+        etPassword = findViewById(R.id.etLoginPassword);
         btnLogin = findViewById(R.id.btnLogin);
         tvGoToSignup = findViewById(R.id.tvGoToSignup);
 
@@ -49,20 +50,24 @@ public class LoginActivity extends AppCompatActivity {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "Please enter email and password", Toast.LENGTH_SHORT).show();
+        if (TextUtils.isEmpty(email)) {
+            etEmail.setError("Email is required");
+            return;
+        }
+
+        if (TextUtils.isEmpty(password)) {
+            etPassword.setError("Password is required");
             return;
         }
 
         mAuth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                        finish();
-                    } else {
-                        Toast.makeText(LoginActivity.this, "Login Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
+                .addOnSuccessListener(authResult -> {
+                    Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    finish();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(LoginActivity.this, "Authentication failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                );
     }
 }
